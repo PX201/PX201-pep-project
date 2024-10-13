@@ -9,16 +9,27 @@ import Model.Account;
 import Util.ConnectionUtil;
 
 public class AccountDAO {
-    Account addAccount(Account account){
-        Connection con = ConnectionUtil.getConnection();
+    public Account addAccount(Account account){
+        
+        String query = "INSERT INTO account(username, password) VALUES(?,?)";
+
         try{
-            String query = "INSERT INTO account(username, password) VALUES(?,?)";
-            PreparedStatement ps = con.prepareStatement(query);
+            Connection con = ConnectionUtil.getConnection();
+            PreparedStatement ps = con.prepareStatement(query, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, account.getUsername());
             ps.setString(2, account.getPassword());
-            if(!ps.execute())
-                return account;
             
+            if(ps.executeUpdate() > 0){
+                try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        account.setAccount_id(generatedKeys.getInt(1)); 
+                        System.out.println("myAccount" + account);
+                        return account;
+                    }
+                }
+            }
+            System.out.println("Out of IF Clause _____________");
+
 
         }catch(SQLException e){
             e.getStackTrace();
@@ -26,18 +37,19 @@ public class AccountDAO {
         return null;
     }
 
-    Account findByAccount_id(int id){
-        Connection con = ConnectionUtil.getConnection();
+    public Account findByAccount_id(int id){
         Account account = null;
+        String query = "SELECT * FROM account WHERE account_id=?";
+
         try{
-            String query = "SELECT * FROM account WHERE id=?";
+            Connection con = ConnectionUtil.getConnection();
             PreparedStatement ps = con.prepareStatement(query);
             ps.setInt(1, id);
-            
             ResultSet rs = ps.executeQuery();
             if(rs.next()){
+                System.out.println("Account retreved successfully");
                 account = new Account();
-                account.setAccount_id(rs.getInt("Account_id"));
+                account.setAccount_id(rs.getInt("account_id"));
                 account.setUsername(rs.getString("username"));
                 account.setPassword(rs.getString("password"));
             }
@@ -46,25 +58,25 @@ public class AccountDAO {
         }catch(SQLException e){
             e.getStackTrace();
         }
+        System.out.println("Account: " + account);
         return account;
     }
 
-    Account findByUsername(String username){
-        Connection con = ConnectionUtil.getConnection();
+    public Account findByUsername(String username){
         Account account = null;
+        String query = "SELECT * FROM account WHERE username=?";
         try{
-            String query = "SELECT * FROM account WHERE username=?";
+            Connection con = ConnectionUtil.getConnection();
             PreparedStatement ps = con.prepareStatement(query);
             ps.setString(1, username);
             
             ResultSet rs = ps.executeQuery();
             if(rs.next()){
                 account = new Account();
-                account.setAccount_id(rs.getInt("Account_id"));
+                account.setAccount_id(rs.getInt("account_id"));
                 account.setUsername(rs.getString("username"));
                 account.setPassword(rs.getString("password"));
             }
-            
 
         }catch(SQLException e){
             e.getStackTrace();
